@@ -8,6 +8,16 @@ Currently, portmidi must be initialized by the user.
 ## Example
 
 ```go
+package main
+
+import (
+	"fmt"
+	"log"
+
+	launchpad "github.com/belak/go-launchpad"
+	"github.com/rakyll/portmidi"
+)
+
 func main() {
 	err := portmidi.Initialize()
 	if err != nil {
@@ -15,16 +25,27 @@ func main() {
 	}
 	defer portmidi.Terminate()
 
-	lp, err := NewLaunchpad("MK2")
+	lp, err := launchpad.NewLaunchpadMk1()
 	if err != nil {
 		log.Fatalln(err)
 	}
 	defer lp.Close()
 
-	lp.ScrollText("Hello World", 40, 1, false)
+	for {
+		event, ok, err := lp.GetEvent()
+		if err != nil {
+			log.Fatalln(err)
+		}
+		if !ok {
+			continue
+		}
 
-	lp.SetAllLEDs(100)
-	time.Sleep(3 * time.Second)
-	lp.SetAllLEDs(0)
+		fmt.Printf("%+v\n", event)
+		if event.Velocity == 0 {
+			lp.SetLED(event.X, event.Y, 0)
+		} else {
+			lp.SetLED(event.X, event.Y, 43)
+		}
+	}
 }
 ```
